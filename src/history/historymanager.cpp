@@ -99,6 +99,15 @@ HistoryManager::HistoryManager(QObject *parent)
     , m_historyFilterModel(0)
     , m_historyTreeModel(0)
 {
+    //SQLite history
+    db = QSqlDatabase::addDatabase(QLatin1String("QSQLITE"));
+    db.setDatabaseName(BrowserApplication::dataFilePath(QLatin1String("history")).append(QLatin1String(".sql")));
+    bool ok = db.open();
+    if (db.tables().isEmpty())
+    {
+        QSqlQuery query;
+        query.exec(QLatin1String("CREATE TABLE entries (url, title, datetime)"));
+    }
     m_expiredTimer.setSingleShot(true);
     connect(&m_expiredTimer, SIGNAL(timeout()),
             this, SLOT(checkForExpired()));
@@ -118,6 +127,7 @@ HistoryManager::HistoryManager(QObject *parent)
     // QWebHistoryInterface will delete the history manager
     QWebHistoryInterface::setDefaultInterface(this);
     startFrecencyTimer();
+
 }
 
 HistoryManager::~HistoryManager()
@@ -291,66 +301,28 @@ void HistoryManager::load()
 {
     loadSettings();
 
-    QFile historyFile(BrowserApplication::dataFilePath(QLatin1String("history")));
-
-    if (!historyFile.exists())
+    if (db.tables().isEmpty())
         return;
-    if (!historyFile.open(QFile::ReadOnly)) {
-        qWarning() << "Unable to open history file" << historyFile.fileName();
-        return;
-    }
-
+    QSqlQuery query;
+    query.exec(QLatin1String("SELECT * FROM entries ORDER BY datetime DESC"));
+    int urlID = query.record().indexOf(QLatin1String("url"));
+    int titleID = query.record().indexOf(QLatin1String("title"));
+    int dateID = query.record().indexOf(QLatin1String("datetime"));
     QList<HistoryEntry> list;
-    QDataStream in(&historyFile);
-    // Double check that the history file is sorted as it is read in
-    bool needToSort = false;
-    HistoryEntry lastInsertedItem;
-    QByteArray data;
-    QDataStream stream;
-    QBuffer buffer;
-    QString string;
-    stream.setDevice(&buffer);
-    while (!historyFile.atEnd()) {
-        in >> data;
-        buffer.close();
-        buffer.setBuffer(&data);
-        buffer.open(QIODevice::ReadOnly);
-        quint32 ver;
-        stream >> ver;
-        if (ver != HISTORY_VERSION)
-            continue;
+    while(query.next())
+    {
         HistoryEntry item;
-        stream >> string;
-        item.url = atomicString(string);
-        stream >> item.dateTime;
-        stream >> string;
-        item.title = atomicString(string);
-
+        item.title = query.value(titleID).toString();
+        item.url = query.value(urlID).toString();
+        item.dateTime = query.value(dateID).toDateTime();
+        qDebug("read " + item.url.toAscii());
         if (!item.dateTime.isValid())
             continue;
 
-        if (item == lastInsertedItem) {
-            if (lastInsertedItem.title.isEmpty() && !list.isEmpty())
-                list[0].title = item.title;
-            continue;
-        }
-
-        if (!needToSort && !list.isEmpty() && lastInsertedItem < item)
-            needToSort = true;
-
-        list.prepend(item);
-        lastInsertedItem = item;
+        list.append(item);
     }
-    if (needToSort)
-        qSort(list.begin(), list.end());
 
     setHistory(list, true);
-
-    // If we had to sort re-write the whole history sorted
-    if (needToSort) {
-        m_lastSavedUrl.clear();
-        m_saveTimer->changeOccurred();
-    }
 }
 
 QString HistoryManager::atomicString(const QString &string) {
@@ -369,52 +341,19 @@ void HistoryManager::save()
     settings.setValue(QLatin1String("historyLimit"), m_daysToExpire);
 
     bool saveAll = m_lastSavedUrl.isEmpty();
-    int first = m_history.count() - 1;
-    if (!saveAll) {
-        // find the first one to save
-        for (int i = 0; i < m_history.count(); ++i) {
-            if (m_history.at(i).url == m_lastSavedUrl) {
-                first = i - 1;
-                break;
-            }
-        }
-    }
-    if (first == m_history.count() - 1)
-        saveAll = true;
 
-    QFile historyFile(BrowserApplication::dataFilePath(QLatin1String("history")));
+    QSqlQuery query;
+    query.exec(QLatin1String("DELETE * FROM entries"));
 
-    // When saving everything use a temporary file to prevent possible data loss.
-    QTemporaryFile tempFile;
-    tempFile.setAutoRemove(false);
-    bool open = false;
-    if (saveAll) {
-        open = tempFile.open();
-    } else {
-        open = historyFile.open(QFile::Append);
-    }
-
-    if (!open) {
-        qWarning() << "Unable to open history file for saving"
-                   << (saveAll ? tempFile.fileName() : historyFile.fileName());
-        return;
-    }
-
-    QDataStream out(saveAll ? &tempFile : &historyFile);
-    for (int i = first; i >= 0; --i) {
-        QByteArray data;
-        QDataStream stream(&data, QIODevice::WriteOnly);
-        HistoryEntry item = m_history.at(i);
-        stream << HISTORY_VERSION << item.url << item.dateTime << item.title;
-        out << data;
-    }
-    tempFile.close();
-
-    if (saveAll) {
-        if (historyFile.exists() && !historyFile.remove())
-            qWarning() << "History: error removing old history." << historyFile.errorString();
-        if (!tempFile.rename(historyFile.fileName()))
-            qWarning() << "History: error moving new history over old." << tempFile.errorString() << historyFile.fileName();
+    for (int i = 0; i < m_history.size(); i++) {
+        HistoryEntry item;
+        item = m_history.at(i);
+        query.prepare(QLatin1String("INSERT INTO entries (url, title, datetime) VALUES (:url, :title, :datetime)"));
+        query.bindValue(QLatin1String(":url"), item.url);
+        query.bindValue(QLatin1String(":title"), item.title);
+        query.bindValue(QLatin1String(":datetime"), item.dateTime);
+        query.exec();
+        qDebug(item.url.toAscii());
     }
     m_lastSavedUrl = m_history.value(0).url;
 }
