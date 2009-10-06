@@ -108,6 +108,7 @@ void LocationBar::paintEvent(QPaintEvent *event)
 
         QLinearGradient gradient(0, 0, width(), 0);
         gradient.setColorAt(0, loadingColor);
+        gradient.setColorAt(0.999*progress/100, loadingColor);
         gradient.setColorAt(((double)progress)/100, backgroundColor);
         p.setBrush(QPalette::Base, gradient);
         setPalette(p);

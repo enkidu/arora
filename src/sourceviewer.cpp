@@ -20,61 +20,29 @@
 
 #include "sourceviewer.h"
 
-#include <qlayout.h>
-#include <qmenubar.h>
+//#include <qlayout.h>
+//#include <qmenubar.h>
 #include <qnetworkcookie.h>
 #include <qnetworkreply.h>
 #include <qnetworkrequest.h>
-#include <qplaintextedit.h>
+//#include <qplaintextedit.h>
 #include <qshortcut.h>
-#include <qsettings.h>
+//#include <qsettings.h>
 #include <qwebframe.h>
 #include <qwebpage.h>
+#include <qtemporaryfile.h>
+#include <qdesktopservices.h>
 
 #include "browserapplication.h"
 #include "networkaccessmanager.h"
-#include "plaintexteditsearch.h"
-#include "sourcehighlighter.h"
+//#include "plaintexteditsearch.h"
+//#include "sourcehighlighter.h"
 
 SourceViewer::SourceViewer(const QString &source, const QString &title,
                            const QUrl &url, QWidget *parent)
-    : QDialog(parent)
-    , m_edit(new QPlainTextEdit(tr("Loading..."), this))
-    , m_highlighter(new SourceHighlighter(m_edit->document()))
-    , m_plainTextEditSearch(new PlainTextEditSearch(m_edit, this))
-    , m_layout(new QVBoxLayout(this))
-    , m_menuBar(new QMenuBar(this))
-    , m_editMenu(new QMenu(tr("&Edit"), m_menuBar))
-    , m_findAction(new QAction(tr("&Find"), m_editMenu))
+    : QObject(parent)
     , m_source(source)
 {
-    setWindowTitle(tr("Source of Page %1").arg(title));
-
-    QSettings settings;
-    settings.beginGroup(QLatin1String("SourceViewer"));
-    QSize size = settings.value(QLatin1String("size"), QSize(640, 480)).toSize();
-    resize(size);
-
-    m_edit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-    m_edit->setReadOnly(true);
-    QFont font = m_edit->font();
-    font.setFamily(QLatin1String("Monospace"));
-    m_edit->setFont(font);
-    m_edit->setLineWidth(0);
-    m_edit->setFrameShape(QFrame::NoFrame);
-
-    m_menuBar->addMenu(m_editMenu);
-    m_editMenu->addAction(m_findAction);
-    m_findAction->setShortcuts(QKeySequence::Find);
-    connect(m_findAction, SIGNAL(triggered()),
-            m_plainTextEditSearch, SLOT(showFind()));
-
-    m_layout->setSpacing(0);
-    m_layout->setContentsMargins(0, 0, 0, 0);
-    m_layout->addWidget(m_menuBar);
-    m_layout->addWidget(m_plainTextEditSearch);
-    m_layout->addWidget(m_edit);
-    setLayout(m_layout);
 
     QNetworkRequest request(url);
     request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::PreferCache);
@@ -85,9 +53,6 @@ SourceViewer::SourceViewer(const QString &source, const QString &title,
 
 SourceViewer::~SourceViewer()
 {
-    QSettings settings;
-    settings.beginGroup(QLatin1String("SourceViewer"));
-    settings.setValue(QLatin1String("size"), size());
 }
 
 void SourceViewer::loadingFinished()
@@ -95,13 +60,23 @@ void SourceViewer::loadingFinished()
     QWebPage page;
     QByteArray response = m_reply->readAll();
     page.mainFrame()->setContent(response, QString(), m_reply->request().url());
+    QTemporaryFile file(QLatin1String("page"));
+    file.setAutoRemove(false);
+    file.open();
+    file.rename(file.fileName().append(QLatin1String(".arora.html.txt")));
+    file.open();
 
     /* If original request was POST or a different problem is there, fall
        back to modified version of QWebFrame.toHtml() */
     if (page.mainFrame()->toHtml() != m_source)
-        m_edit->setPlainText(m_source);
+    {
+        file.write(m_source.toUtf8());
+    }
     else
-        m_edit->setPlainText(QLatin1String(response));
-
-    m_reply->close();
+    {
+        file.write(response);
+    }
+    file.close();
+    QDesktopServices::openUrl(QUrl(file.fileName()));
+    this->deleteLater();
 }
