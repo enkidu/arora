@@ -1393,8 +1393,6 @@ void BrowserMainWindow::viewPageSource()
     QString markup = currentTab()->page()->mainFrame()->toHtml();
     QUrl url = currentTab()->url();
     SourceViewer *viewer = new SourceViewer(markup, title, url);
-    viewer->setAttribute(Qt::WA_DeleteOnClose);
-    viewer->show();
 }
 
 void BrowserMainWindow::goHome()
