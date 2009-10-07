@@ -22,16 +22,16 @@
 
 #include <qdialog.h>
 
-//class QVBoxLayout;
-//class SourceHighlighter;
-//class PlainTextEditSearch;
-//class QPlainTextEdit;
-//class QMenuBar;
-//class QMenu;
+class QVBoxLayout;
+class SourceHighlighter;
+class PlainTextEditSearch;
+class QPlainTextEdit;
+class QMenuBar;
+class QMenu;
 class QUrl;
-//class QAction;
+class QAction;
 class QNetworkReply;
-class SourceViewer : public QObject
+class SourceViewer : public QDialog
 {
     Q_OBJECT
 
@@ -41,6 +41,14 @@ public:
     ~SourceViewer();
 
 private:
+    QPlainTextEdit *m_edit;
+    SourceHighlighter *m_highlighter;
+    PlainTextEditSearch *m_plainTextEditSearch;
+    QVBoxLayout *m_layout;
+    QMenuBar *m_menuBar;
+    QMenu *m_editMenu;
+    QAction *m_findAction;
+    QMenu *m_viewMenu;
     QNetworkReply *m_reply;
     QString m_source;
 

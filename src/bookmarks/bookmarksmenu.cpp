@@ -122,15 +122,15 @@ void BookmarksMenu::openAll()
     ModelMenu *menu = qobject_cast<ModelMenu*>(sender()->parent());
     if (!menu)
         return;
+
     QModelIndex parent = menu->rootIndex();
     if (!parent.isValid())
         return;
     for (int i = 0; i < parent.model()->rowCount(parent); ++i) {
+        qDebug(QByteArray::number(i));
         QModelIndex child = parent.model()->index(i, 0, parent);
-
         if (child.data(BookmarksModel::TypeRole) != BookmarkNode::Bookmark)
             continue;
-
         TabWidget::OpenUrlIn tab;
         tab = (i == 0) ? TabWidget::CurrentTab : TabWidget::NewTab;
         emit openUrl(child.data(BookmarksModel::UrlRole).toUrl(),

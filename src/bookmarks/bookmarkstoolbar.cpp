@@ -146,5 +146,7 @@ ModelMenu *BookmarksToolBar::createMenu()
     BookmarksMenu *menu = new BookmarksMenu(this);
     connect(menu, SIGNAL(openUrl(const QUrl&, const QString&)),
             this, SIGNAL(openUrl(const QUrl&, const QString&)));
+    connect(menu, SIGNAL(openUrl(QUrl,TabWidget::OpenUrlIn,QString)),
+            this, SIGNAL(openUrl(QUrl,TabWidget::OpenUrlIn,QString)));
     return menu;
 }

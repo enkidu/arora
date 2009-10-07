@@ -68,7 +68,6 @@
 #include <qtimer.h>
 #include <qurl.h>
 #include <qwebhistoryinterface.h>
-#include <QtSql>
 
 class HistoryEntry
 {
@@ -123,7 +122,6 @@ public:
     void setDaysToExpire(int limit);
 
     QList<HistoryEntry> history() const;
-    QSqlDatabase db;
     void setHistory(const QList<HistoryEntry> &history, bool loadedAndSorted = false);
 
     // History manager keeps around these models for use by the completer and other classes
