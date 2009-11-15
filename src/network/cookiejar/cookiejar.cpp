@@ -249,6 +249,15 @@ QList<QNetworkCookie> CookieJar::cookiesForUrl(const QUrl &url) const
     return NetworkCookieJar::cookiesForUrl(url);
 }
 
+QList<QNetworkCookie> CookieJar::cookies() const
+{
+    CookieJar *that = const_cast<CookieJar*>(this);
+    if (!m_loaded)
+        that->load();
+
+    return NetworkCookieJar::allCookies();
+}
+
 bool CookieJar::setCookiesFromUrl(const QList<QNetworkCookie> &cookieList, const QUrl &url)
 {
     if (!m_loaded)
@@ -327,6 +336,13 @@ bool CookieJar::setCookiesFromUrl(const QList<QNetworkCookie> &cookieList, const
         emit cookiesChanged();
     }
     return addedCookies;
+}
+
+bool CookieJar::setCookies(const QList<QNetworkCookie> &cookieList)
+{
+    setAllCookies(cookieList);
+    save();
+    return true;
 }
 
 bool CookieJar::isOnDomainList(const QStringList &rules, const QString &domain)

@@ -18,26 +18,11 @@
  * Boston, MA  02110-1301  USA
  */
 
-#include <qdatetime.h>
-#include <qdebug.h>
-#include <qdir.h>
-#include <qfile.h>
-#include <qsqldatabase.h>
-#include <qsqlerror.h>
-#include <qsqlquery.h>
-#include <qtextstream.h>
-#include <qvariant.h>
 
 #include "singleapplication.h"
-#include "historymanager.h"
-
-static HistoryEntry formatEntry(QByteArray url, QByteArray title, qlonglong prdate)
-{
-    QDateTime dateTime = QDateTime::fromTime_t(prdate / 1000000);
-    dateTime.addMSecs((prdate % 1000000) / 1000);
-    HistoryEntry entry(url, dateTime, title);
-    return entry;
-}
+#include "importwizard.h"
+#include "importmanager.h"
+#include <QMessageBox>
 
 int main(int argc, char **argv)
 {
@@ -46,49 +31,34 @@ int main(int argc, char **argv)
     QCoreApplication::setApplicationName(QLatin1String("Arora"));
 
     if (application.sendMessage(QByteArray())) {
-        qWarning() << "To prevent the loss of any history please exit Arora while this is tool is being run";
+        QMessageBox::warning(0, QObject::tr("Arora running"), QObject::tr("Please exit Arora before running this wizard"));
         return 1;
     }
-
-    QStringList args = application.arguments();
-    args.takeFirst();
-    if (args.isEmpty()) {
-        QTextStream stream(stdout);
-        stream << "arora-placesimport is a tool for importing browser history from Firefox 3 and up" << endl;
-        stream << "arora-placesinfo ~/.mozilla/firefox/[profile-dir]/places.sqlite" << endl;
-        return 0;
+    QApplication app(argc, argv);
+    ImportWizard *wizard = new ImportWizard();
+    wizard->setVisible(true);
+   /* QFile file(QDir::homePath().append(QLatin1String("/.opera/global.dat")));
+    if ( file.open(QIODevice::ReadOnly) )
+    {
+        HistoryManager manager;
+        QList<HistoryEntry> history = manager.history();
+        QTextStream t( &file );
+        while ( !t.atEnd() )
+        {
+            QString title = t.readLine();
+            QString url = t.readLine();
+            quint64 time = t.readLine().toUInt();
+            t.readLine(); //unknown parameter
+            HistoryEntry entry = formatEntry(url.toUtf8(), title.toUtf8(), time * 1000000);
+            history.append(entry);
+        }
+        manager.setHistory(history);
+    file.close();
     }
+    else
+        qDebug("no Opera history file");
 
-    QSqlDatabase placesDatabase = QSqlDatabase::addDatabase("QSQLITE");
-    placesDatabase.setDatabaseName(args.first());
-
-    if (!placesDatabase.open()) {
-        qWarning("Unable to open database: %s", qPrintable(placesDatabase.lastError().text()));
-        return 1;
-    }
-
-    QSqlQuery historyQuery(
-        "SELECT moz_places.url, moz_places.title, moz_historyvisits.visit_date "
-        "FROM moz_places, moz_historyvisits "
-        "WHERE moz_places.id = moz_historyvisits.place_id;");
-    historyQuery.setForwardOnly(true);
-
-    if (!historyQuery.exec()) {
-        qWarning("Unable to extract history: %s.  Is Firefox running?", qPrintable(historyQuery.lastError().text()));
-        return 1;
-    }
-
-    HistoryManager manager;
-    QList<HistoryEntry> history = manager.history();
-    while (historyQuery.next()) {
-        QByteArray url = historyQuery.value(0).toByteArray();
-        QByteArray title = historyQuery.value(1).toByteArray();
-        qlonglong prdate = historyQuery.value(2).toLongLong();
-        HistoryEntry entry = formatEntry(url, title, prdate);
-        history.append(entry);
-    }
-    manager.setHistory(history);
-
-    return 0;
+*/
+    return application.exec();
 }
 

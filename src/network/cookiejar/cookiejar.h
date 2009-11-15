@@ -108,7 +108,9 @@ public:
     ~CookieJar();
 
     QList<QNetworkCookie> cookiesForUrl(const QUrl &url) const;
+    QList<QNetworkCookie> cookies() const;
     bool setCookiesFromUrl(const QList<QNetworkCookie> &cookieList, const QUrl &url);
+    bool setCookies(const QList<QNetworkCookie> &cookieList);
 
     AcceptPolicy acceptPolicy() const;
     void setAcceptPolicy(AcceptPolicy policy);
