@@ -7,6 +7,8 @@ ImportWizard::ImportWizard(QWidget *parent) : QWizard(parent)
     fxImportPage    = new FXImportPage;
     conclusionPage  = new ConclusionPage;
 
+    importFF = false;
+
     setPage(WizardPage::Page_Intro, introPage);
     setPage(WizardPage::Page_Select, selectPage);
     setPage(WizardPage::Page_FX_Import, fxImportPage);
