@@ -14,6 +14,7 @@
 #include <qsettings.h>
 #include "historymanager.h"
 #include "cookiejar.h"
+#include "importwizard.h"
 
 class ImportManager : public QObject
 {
@@ -21,6 +22,7 @@ Q_OBJECT
 
 public:
     ImportManager();
+    ~ImportManager(){qDebug("clean exit");}
     bool firefoxPresent();
     //bool operaPresent();
 public slots:
@@ -29,6 +31,7 @@ public slots:
 private:
     HistoryManager manager;
     CookieJar jar;
+    ImportWizard *wizard;
     QString firefoxDir;
     QString operaDir;
 signals:

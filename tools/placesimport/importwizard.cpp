@@ -2,30 +2,59 @@
 
 ImportWizard::ImportWizard(QWidget *parent) : QWizard(parent)
 {
-    manager = new ImportManager();
-    ffPresent = manager->firefoxPresent();
-    setPage(Page_Intro, new IntroPage);
-    setPage(Page_Select, new SelectPage(0, this));
-    setPage(Page_FX_Import, new FXImportPage(0, manager));
-    setPage(Page_Conclusion, new ConclusionPage);
-    setStartId(Page_Intro);
+    introPage       = new IntroPage;
+    selectPage      = new SelectPage;
+    fxImportPage    = new FXImportPage;
+    conclusionPage  = new ConclusionPage;
+
+    setPage(WizardPage::Page_Intro, introPage);
+    setPage(WizardPage::Page_Select, selectPage);
+    setPage(WizardPage::Page_FX_Import, fxImportPage);
+    setPage(WizardPage::Page_Conclusion, conclusionPage);
+
+    connect(selectPage,     SIGNAL(importFF(bool)),
+            this,           SLOT(setImportFF(bool)));
+
+    connect(this,           SIGNAL(cookieCount(int)),
+            fxImportPage,   SLOT(cookieCount(int)));
+    connect(this,           SIGNAL(cookieEntryAdded()),
+            fxImportPage,   SLOT(cookieEntryAdded()));
+    connect(this,           SIGNAL(historyCount(int)),
+            fxImportPage,   SLOT(historyCount(int)));
+    connect(this,           SIGNAL(historyEntryAdded()),
+            fxImportPage,   SLOT(historyEntryAdded()));
+
+    setStartId(WizardPage::Page_Intro);
     connect(this, SIGNAL(currentIdChanged(int)), this, SLOT(startImport(int)));
 }
-void ImportWizard::setImportFf(bool ok)
+void ImportWizard::setImportFF(bool ok)
 {
-    importFf = ok;
+    importFF = ok;
 }
-bool ImportWizard::isFfPresent()
+bool ImportWizard::isFFPresent() const
 {
     return ffPresent;
 }
+void ImportWizard::setFFPresent(bool ok)
+{
+    ffPresent = ok;
+}
 void ImportWizard::startImport(int id)
 {
-    switch (id)
-    {
-        case Page_FX_Import:
-        manager->importFirefox();
-    }
+    if (id == WizardPage::Page_FX_Import)
+        emit startFFImport();
+}
+bool ImportWizard::isImportFF() const
+{
+    return importFF;
+}
+void ImportWizard::setOperaPresent(bool ok)
+{
+    operaPresent = ok;
+}
+bool ImportWizard::isOperaPresent() const
+{
+    return operaPresent;
 }
 IntroPage::IntroPage(QWidget *parent) : QWizardPage(parent)
 {
@@ -40,47 +69,42 @@ IntroPage::IntroPage(QWidget *parent) : QWizardPage(parent)
 
 int IntroPage::nextId() const
 {
-    return ImportWizard::Page_Select;
+    return WizardPage::Page_Select;
 }
 
-SelectPage::SelectPage(QWidget *parent, ImportWizard *wizard) : QWizardPage(parent)
+SelectPage::SelectPage(QWidget *parent/*, ImportManager *manager*/) : QWizardPage(parent)
 {
-    this->wizard = wizard;
+    //this->manager = manager;
     setTitle(tr("Select Browsers"));
     topLabel = new QLabel(tr("Select browsers, from which you want to import your data"));
     topLabel->setWordWrap(true);
-    QVBoxLayout *layout = new QVBoxLayout;
+    layout = new QVBoxLayout;
     layout->addWidget(topLabel);
     ffBox = new QCheckBox("Firefox / Iceweasel");
-    if (wizard->isFfPresent())
-    {
-        layout->addWidget(ffBox);
-    }
     setLayout(layout);
+    connect(ffBox, SIGNAL(toggled(bool)), this, SIGNAL(importFF(bool)));
 }
-
+void SelectPage::setEnabled(int browser)
+{
+    if (browser == WizardPage::Firefox)
+        layout->addWidget(ffBox);
+}
 int SelectPage::nextId() const
 {
     if (ffBox->isChecked())
     {
-        wizard->setImportFf(true);
-        return ImportWizard::Page_FX_Import;
+        return WizardPage::Page_FX_Import;
     }
     else
-        return ImportWizard::Page_Conclusion;
+        return WizardPage::Page_Conclusion;
 }
 
-FXImportPage::FXImportPage(QWidget *parent, ImportManager *manager) : QWizardPage(parent)
+FXImportPage::FXImportPage(QWidget *parent/*, ImportManager *manager*/) : QWizardPage(parent)
 {
-    this->manager = manager;
-    connect(manager, SIGNAL(historyCount(int)), this, SLOT(historyCount(int)));
-    connect(manager, SIGNAL(historyEntryAdded()), this, SLOT(historyEntryAdded()));
-    connect(manager, SIGNAL(cookieCount(int)), this, SLOT(cookieCount(int)));
-    connect(manager, SIGNAL(cookieEntryAdded()), this, SLOT(cookieEntryAdded()));
     setTitle(tr("Importing user data: Firefox"));
     topLabel = new QLabel(tr("Please wait while wizard is importing your data..."));
     topLabel->setWordWrap(true);
-    QVBoxLayout *layout = new QVBoxLayout;
+    layout = new QVBoxLayout;
     layout->addWidget(topLabel);
     historyBar=new QProgressBar();
     historyBar->setValue(0);
@@ -88,14 +112,14 @@ FXImportPage::FXImportPage(QWidget *parent, ImportManager *manager) : QWizardPag
     layout->addWidget(historyBar);
     cookieBar=new QProgressBar();
     cookieBar->setValue(0);
-    cookieBar->setFormat(tr("%v/%m places"));
+    cookieBar->setFormat(tr("%v/%m cookies"));
     layout->addWidget(cookieBar);
     setLayout(layout);
 }
 
 int FXImportPage::nextId() const
 {
-    return ImportWizard::Page_Conclusion;
+    return WizardPage::Page_Conclusion;
 }
 
 void FXImportPage::historyCount(int count)

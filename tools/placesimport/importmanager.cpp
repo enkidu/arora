@@ -32,16 +32,28 @@ static HistoryEntry formatEntry(QByteArray url, QByteArray title, qlonglong prda
 
 ImportManager::ImportManager()
 {
+    wizard = new ImportWizard();
+    wizard->setFFPresent(firefoxPresent());
+    connect(wizard, SIGNAL(startFfImport()), this, SLOT(importFirefox()));
+    connect(this, SIGNAL(cookieCount(int)), wizard, SIGNAL(cookieCount(int)));
+    connect(this, SIGNAL(cookieEntryAdded()), wizard, SIGNAL(cookieEntryAdded()));
+    connect(this, SIGNAL(historyCount(int)), wizard, SIGNAL(historyCount(int)));
+    connect(this, SIGNAL(historyEntryAdded()), wizard, SIGNAL(historyEntryAdded()));
+    wizard->show();
 }
 
 bool ImportManager::firefoxPresent()
 {
+#ifdef Q_OS_WIN32
+    QString ffdir("%APPDATA\\ff");
+#endif
 #ifdef Q_OS_LINUX
     QString ffdir = QDir::homePath().append( QLatin1String("/.mozilla/firefox/"));
 #endif
 #ifdef Q_OS_MAC
     QString ffdir = QDir::homePath().append( QLatin1String("/Library/firefox/"));
 #endif
+
     QString tmpDir = ffdir;
     QFileInfo fi(tmpDir.append("profiles.ini"));
     if (!fi.exists())
@@ -102,6 +114,7 @@ void ImportManager::importFirefox()
             }
         }
     }
+    //following block _must_ stay in own "scope", otherwise _will_not_work_
     {
         QSqlDatabase cookiesDatabase = QSqlDatabase::addDatabase("QSQLITE");
         cookiesDatabase.setDatabaseName(firefoxDir + QLatin1String("cookies.sqlite"));

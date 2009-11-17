@@ -4,26 +4,16 @@
 #include <QWizard>
 #include <QWidget>
 #include <QObject>
-#include "importmanager.h"
 #include <QtGui>
 
-class ImportWizard : public QWizard
+class WizardPage
 {
-Q_OBJECT
 
 public:
     enum {Page_Intro, Page_Select, Page_FX_Import, Page_Conclusion};
-    ImportWizard(QWidget *parent = 0);
-    bool isFfPresent();
-    void setImportFf(bool);
-    //bool isOperaPresent();
-private:
-    ImportManager *manager;
-    bool ffPresent;
-    bool importFf;
-    //bool operaPresent;
-private slots:
-    void startImport(int);
+    enum {Firefox, Opera};
+    WizardPage(){}
+    ~WizardPage(){}
 };
 
 class IntroPage : public QWizardPage
@@ -42,13 +32,16 @@ class SelectPage : public QWizardPage
 Q_OBJECT
 
 public:
-    SelectPage(QWidget *parent = 0, ImportWizard *wizard = 0);
+    SelectPage(QWidget *parent = 0);
     int nextId() const;
+    void setEnabled(int);
 private:
-    ImportWizard *wizard;
+    QVBoxLayout *layout;
     QLabel *topLabel;
     QCheckBox *ffBox;
     QCheckBox *operaBox;
+signals:
+    void importFF(bool);
 };
 
 class FXImportPage : public QWizardPage
@@ -56,13 +49,14 @@ class FXImportPage : public QWizardPage
 Q_OBJECT
 
 public:
-    FXImportPage(QWidget *parent = 0, ImportManager *manager = 0);
+    FXImportPage(QWidget *parent = 0/*, ImportManager *manager = 0*/);
     int nextId() const;
 private:
-    ImportManager *manager;
+    /*ImportManager *manager;*/
     QLabel *topLabel;
     QProgressBar *historyBar;
     QProgressBar *cookieBar;
+    QVBoxLayout *layout;
 public slots:
     void historyCount(int);
     void historyEntryAdded();
@@ -75,8 +69,42 @@ class ConclusionPage : public QWizardPage
 Q_OBJECT
 
 public:
-    ConclusionPage(QWidget *parent = 0){}
-    int nextId() const {return -1;}
+    ConclusionPage(QWidget *parent = 0) : QWizardPage(parent){}
+};
+
+class ImportWizard : public QWizard
+{
+Q_OBJECT
+public:
+    ImportWizard(QWidget *parent = 0);
+    ~ImportWizard(){qDebug("wizard deleted");}
+    void setFFPresent(bool);
+
+    void setOperaPresent(bool);
+    bool isFFPresent() const;
+    bool isOperaPresent() const;
+    bool isImportFF() const;
+    //bool isOperaPresent();
+signals:
+    void startFFImport();
+    void historyStart();
+    void historyCount(int);
+    void historyEntryAdded();
+    void firefoxDbaseError(QString);
+    void cookieStart();
+    void cookieCount(int);
+    void cookieEntryAdded();
+private:
+    IntroPage *introPage;
+    SelectPage *selectPage;
+    FXImportPage *fxImportPage;
+    ConclusionPage *conclusionPage;
+    bool ffPresent;
+    bool importFF;
+    bool operaPresent;
+private slots:
+    void startImport(int);
+    void setImportFF(bool);
 };
 
 #endif // IMPORTWIZARD_H

@@ -34,13 +34,11 @@
 #include "browserapplication.h"
 #include "networkaccessmanager.h"
 #include "plaintexteditsearch.h"
-#include "sourcehighlighter.h"
 
 SourceViewer::SourceViewer(const QString &source, const QString &title,
                            const QUrl &url, QWidget *parent)
     : QDialog(parent)
     , m_edit(new QPlainTextEdit(tr("Loading..."), this))
-    , m_highlighter(new SourceHighlighter(m_edit->document()))
     , m_plainTextEditSearch(new PlainTextEditSearch(m_edit, this))
     , m_layout(new QVBoxLayout(this))
     , m_menuBar(new QMenuBar(this))

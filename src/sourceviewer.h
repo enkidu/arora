@@ -23,7 +23,6 @@
 #include <qdialog.h>
 
 class QVBoxLayout;
-class SourceHighlighter;
 class PlainTextEditSearch;
 class QPlainTextEdit;
 class QMenuBar;
@@ -42,7 +41,6 @@ public:
 
 private:
     QPlainTextEdit *m_edit;
-    SourceHighlighter *m_highlighter;
     PlainTextEditSearch *m_plainTextEditSearch;
     QVBoxLayout *m_layout;
     QMenuBar *m_menuBar;

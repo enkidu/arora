@@ -58,7 +58,6 @@ HEADERS += \
     searchbutton.h \
     searchlineedit.h \
     settings.h \
-    sourcehighlighter.h \
     sourceviewer.h \
     tabbar.h \
     tabwidget.h \
@@ -86,7 +85,6 @@ SOURCES += \
     searchbutton.cpp \
     searchlineedit.cpp \
     settings.cpp \
-    sourcehighlighter.cpp \
     sourceviewer.cpp \
     tabbar.cpp \
     tabwidget.cpp \

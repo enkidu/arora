@@ -20,7 +20,6 @@
 
 
 #include "singleapplication.h"
-#include "importwizard.h"
 #include "importmanager.h"
 #include <QMessageBox>
 
@@ -34,9 +33,7 @@ int main(int argc, char **argv)
         QMessageBox::warning(0, QObject::tr("Arora running"), QObject::tr("Please exit Arora before running this wizard"));
         return 1;
     }
-    QApplication app(argc, argv);
-    ImportWizard *wizard = new ImportWizard();
-    wizard->setVisible(true);
+    ImportManager manager;
    /* QFile file(QDir::homePath().append(QLatin1String("/.opera/global.dat")));
     if ( file.open(QIODevice::ReadOnly) )
     {
