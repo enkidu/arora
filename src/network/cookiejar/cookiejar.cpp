@@ -341,7 +341,7 @@ bool CookieJar::setCookiesFromUrl(const QList<QNetworkCookie> &cookieList, const
 bool CookieJar::setCookies(const QList<QNetworkCookie> &cookieList)
 {
     setAllCookies(cookieList);
-    save();
+    m_saveTimer->changeOccurred();
     return true;
 }
 

@@ -74,7 +74,7 @@ CookieModel::CookieModel(CookieJar *cookieJar, QObject *parent)
 {
     connect(m_cookieJar, SIGNAL(cookiesChanged()), this, SLOT(cookiesChanged()));
     m_cookieJar->load();
-    m_cookies = m_cookieJar->allCookies();
+    m_cookies = m_cookieJar->cookies();
 }
 
 QVariant CookieModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -166,7 +166,7 @@ bool CookieModel::removeRows(int row, int count, const QModelIndex &parent)
     for (int i = lastRow; i >= row; --i) {
         lst.removeAt(i);
     }
-    m_cookieJar->setAllCookies(lst);
+    m_cookieJar->setCookies(lst);
     disconnect(m_cookieJar, SIGNAL(cookiesChanged()), this, SLOT(cookiesChanged()));
     m_cookieJar->m_saveTimer->changeOccurred();
     emit m_cookieJar->cookiesChanged();
