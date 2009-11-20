@@ -87,6 +87,7 @@
 #include "toolbarsearch.h"
 #include "webview.h"
 #include "webviewsearch.h"
+#include "statusbar.h"
 
 #include <qdesktopwidget.h>
 #include <qevent.h>
@@ -98,7 +99,7 @@
 #include <qtextcodec.h>
 #include <qmenubar.h>
 #include <qmessagebox.h>
-#include <qstatusbar.h>
+//#include <qstatusbar.h>
 #include <qtoolbar.h>
 #include <qinputdialog.h>
 #include <qsplitter.h>
@@ -122,10 +123,12 @@ BrowserMainWindow::BrowserMainWindow(QWidget *parent, Qt::WindowFlags flags)
     , m_autoSaver(new AutoSaver(this))
 {
     setAttribute(Qt::WA_DeleteOnClose, true);
-    statusBar()->setSizeGripEnabled(true);
+    m_statusBar = new StatusBar(this);
+
+    m_statusBar->setSizeGripEnabled(false);
     // fixes https://bugzilla.mozilla.org/show_bug.cgi?id=219070
     // yes, that's a Firefox bug!
-    statusBar()->setLayoutDirection(Qt::LeftToRight);
+    m_statusBar->setLayoutDirection(Qt::LeftToRight);
     setupMenu();
     setupToolBar();
 
@@ -182,9 +185,9 @@ BrowserMainWindow::BrowserMainWindow(QWidget *parent, Qt::WindowFlags flags)
     connect(m_tabWidget, SIGNAL(setCurrentTitle(const QString &)),
             this, SLOT(updateWindowTitle(const QString &)));
     connect(m_tabWidget, SIGNAL(showStatusBarMessage(const QString&)),
-            statusBar(), SLOT(showMessage(const QString&)));
+            m_statusBar, SLOT(sb_showMessage(QString)));
     connect(m_tabWidget, SIGNAL(linkHovered(const QString&)),
-            statusBar(), SLOT(showMessage(const QString&)));
+            m_statusBar, SLOT(sb_showMessage(const QString&)));
     connect(m_tabWidget, SIGNAL(loadProgress(int)),
             this, SLOT(loadProgress(int)));
     connect(m_tabWidget, SIGNAL(tabsChanged()),
@@ -196,14 +199,14 @@ BrowserMainWindow::BrowserMainWindow(QWidget *parent, Qt::WindowFlags flags)
     connect(m_tabWidget, SIGNAL(menuBarVisibilityChangeRequested(bool)),
             menuBar(), SLOT(setVisible(bool)));
     connect(m_tabWidget, SIGNAL(statusBarVisibilityChangeRequested(bool)),
-            statusBar(), SLOT(setVisible(bool)));
+            m_statusBar, SLOT(setVisible(bool)));
     connect(m_tabWidget, SIGNAL(toolBarVisibilityChangeRequested(bool)),
             m_navigationBar, SLOT(setVisible(bool)));
     connect(m_tabWidget, SIGNAL(toolBarVisibilityChangeRequested(bool)),
             m_bookmarksToolbar, SLOT(setVisible(bool)));
     connect(m_tabWidget, SIGNAL(lastTabClosed()),
             this, SLOT(lastTabClosed()));
-
+    this->setStatusBar(m_statusBar);
     updateWindowTitle();
     loadDefaultState();
     m_tabWidget->newTab();
@@ -315,7 +318,7 @@ QByteArray BrowserMainWindow::saveState(bool withTabs) const
     stream << normalGeometry().size();
     stream << !m_navigationBar->isHidden(); // DEAD
     stream << !m_bookmarksToolbar->isHidden(); // DEAD
-    stream << !statusBar()->isHidden();
+    stream << !m_statusBar->isHidden();
     if (withTabs)
         stream << tabWidget()->saveState();
     else
@@ -403,7 +406,7 @@ bool BrowserMainWindow::restoreState(const QByteArray &state)
     menuBar()->setVisible(showMenuBar);
     m_menuBarVisible = showMenuBar;
 
-    statusBar()->setVisible(showStatusbar);
+    m_statusBar->setVisible(showStatusbar);
 
     m_navigationSplitter->restoreState(splitterState);
 
@@ -876,7 +879,7 @@ void BrowserMainWindow::aboutToShowViewMenu()
 {
     m_viewToolbarAction->setText(m_navigationBar->isVisible() ? tr("Hide Toolbar") : tr("Show Toolbar"));
     m_viewBookmarkBarAction->setText(m_bookmarksToolbar->isVisible() ? tr("Hide Bookmarks Bar") : tr("Show Bookmarks Bar"));
-    m_viewStatusbarAction->setText(statusBar()->isVisible() ? tr("Hide Status Bar") : tr("Show Status Bar"));
+    m_viewStatusbarAction->setText(m_statusBar->isVisible() ? tr("Hide Status Bar") : tr("Show Status Bar"));
 }
 
 void BrowserMainWindow::aboutToShowTextEncodingMenu()
@@ -1126,13 +1129,13 @@ void BrowserMainWindow::viewBookmarksBar()
 
 void BrowserMainWindow::viewStatusbar()
 {
-    if (statusBar()->isVisible()) {
-        statusBar()->close();
+    if (m_statusBar->isVisible()) {
+        m_statusBar->close();
     } else {
-        statusBar()->show();
+        m_statusBar->show();
     }
 
-    m_statusBarVisible = statusBar()->isVisible();
+    m_statusBarVisible = m_statusBar->isVisible();
 
     m_autoSaver->changeOccurred();
 }
@@ -1164,7 +1167,7 @@ void BrowserMainWindow::preferences()
 
 void BrowserMainWindow::updateStatusbar(const QString &string)
 {
-    statusBar()->showMessage(string, 2000);
+    m_statusBar->sb_showMessage(string, 2000);
 }
 
 void BrowserMainWindow::updateWindowTitle(const QString &title)
@@ -1375,12 +1378,12 @@ void BrowserMainWindow::viewFullScreen(bool makeFullScreen)
         setWindowState(windowState() | Qt::WindowFullScreen);
 
         menuBar()->hide();
-        statusBar()->hide();
+        m_statusBar->hide();
     } else {
         setWindowState(windowState() & ~Qt::WindowFullScreen);
 
         menuBar()->setVisible(m_menuBarVisible);
-        statusBar()->setVisible(m_statusBarVisible);
+        m_statusBar->setVisible(m_statusBarVisible);
     }
 }
 

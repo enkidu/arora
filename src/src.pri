@@ -65,7 +65,8 @@ HEADERS += \
     webactionmapper.h \
     webpage.h \
     webview.h \
-    webviewsearch.h
+    webviewsearch.h \
+    statusbar.h
 
 SOURCES += \
     aboutdialog.cpp \
@@ -92,7 +93,8 @@ SOURCES += \
     webactionmapper.cpp \
     webpage.cpp \
     webview.cpp \
-    webviewsearch.cpp
+    webviewsearch.cpp \
+    statusbar.cpp
 
 include(adblock/adblock.pri)
 include(bookmarks/bookmarks.pri)

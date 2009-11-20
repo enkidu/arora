@@ -75,7 +75,7 @@ class QSplitter;
 class QFrame;
 class HistoryMenu;
 class BookmarksMenuBarMenu;
-
+class StatusBar;
 /*!
     The MainWindow of the Browser Application.
 
@@ -249,6 +249,8 @@ private:
     QIcon m_stopIcon;
     QSplitter *m_navigationSplitter;
     ToolbarSearch *m_toolbarSearch;
+    //StatusBar and related stuff
+    StatusBar *m_statusBar;
 #if defined(Q_WS_MAC)
     QFrame *m_bookmarksToolbarFrame;
 #endif

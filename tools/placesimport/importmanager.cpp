@@ -45,7 +45,7 @@ ImportManager::ImportManager()
 bool ImportManager::firefoxPresent()
 {
 #ifdef Q_OS_WIN32
-    QString ffdir("%APPDATA\\ff");
+    QString ffdir("%APPDATA\\Mozilla\Firefox\");
 #endif
 #ifdef Q_OS_LINUX
     QString ffdir = QDir::homePath().append( QLatin1String("/.mozilla/firefox/"));
@@ -67,7 +67,6 @@ bool ImportManager::firefoxPresent()
     QString profileDir = FFSettings.value(QLatin1String("Path"), QLatin1String("")).toString();
     if (profileDir.isEmpty())
         return false;
-    firefoxDir = ffdir.append(profileDir).append(QDir::separator());
     qDebug(firefoxDir.toAscii());
     return true;
 }
